@@ -243,8 +243,12 @@ app.post('/directMessage', auth, (req, res) => {
             { $or: [{ toEmail: res.locals.user.email }, { toEmail: req.body.receiver }] }
         ]
     }, (err, found) => {
-        if (!err && found.length !== 0) {
-            res.send(found)
+        if(!err){
+            if (found.length !== 0) {
+                res.send(found)
+            }else {
+                res.send("No Messages")
+            }
         }
     })
 
