@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken')
 require("dotenv").config();
 const cors = require("cors");
 app.use(express.json());
-app.set("port", 5000);
+app.set("port", process.env.PORT);
 
 //videochat application --> Working correctly,but need to be deployed....
 //by adding "proxy":"http://localhost:8000"
@@ -49,7 +49,7 @@ app.set("port", 5000);
 const server = http.createServer(app);
 options = {
     cors: true,
-    origins: ["http://127.0.0.1:3000"],
+    origins: ["https://dovetail-elan.herokuapp.com"],
 };
 const io = socketio(server, options);
 // const router = require('./router');
@@ -58,7 +58,7 @@ const io = socketio(server, options);
 app.use(
     cors(
         {
-            origin: "http://localhost:3000",
+            origin: "https://dovetail-elan.herokuapp.com",
             credentials: true,
         }
     )
@@ -139,6 +139,7 @@ const userSchema = new mongoose.Schema({
     password: String,
     name: String,
     dp: String,
+    rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Room" }],
     interests: [],
 })
 const User = new mongoose.model("User", userSchema)
@@ -169,12 +170,9 @@ app.get("/", (req, res) => {
 })
 
 app.post('/getMe', auth, (req, res) => {
-    res.send(res.locals.user.email)
-})
-
-app.get('/getMyName', (req, res) => {
-    User.findOne({ email: req.query.email }, (err, found) => {
-        res.send(found.name)
+    User.findOne({ email: res.locals.user.email }, (err, found) => {
+        if (!err && found)
+            res.send(found)
     })
 })
 
@@ -235,22 +233,16 @@ app.post('/joinRoom', auth, (req, res) => {
     })
 })
 
-// app.post('/directMessage', auth, (req, res) => {
+app.post('/joinedRooms', auth, (req, res) => {
+    User.findOne({ email: res.locals.user.email })
+        .populate('rooms')
+        .exec(function (err, rooms) {
+            if (err) return handleError(err);
+            res.send(rooms);
+        })
+})
 
-//     Message.find({
-//         $and: [
-//             { $or: [{ fromEmail: res.locals.user.email }, { fromEmail: req.body.receiver }] },
-//             { $or: [{ toEmail: res.locals.user.email }, { toEmail: req.body.receiver }] }
-//         ]
-//     }, (err, found) => {
-//         if (!err && found.length !== 0) {
-//             res.send(found)
-//         }
-//     })
-
-// })
 app.post('/directMessage', auth, (req, res) => {
-
     Message.find({
         $and: [
             { $or: [{ fromEmail: res.locals.user.email }, { fromEmail: req.body.receiver }] },
@@ -265,8 +257,8 @@ app.post('/directMessage', auth, (req, res) => {
             }
         }
     })
-
 })
+
 
 app.post('/roomMessages', (req, res) => {
     Room.findOne({ roomName: req.body.roomName })
@@ -515,6 +507,6 @@ app.post("/refresh", (req, res) => {
     });
 });
 
-server.listen(process.env.PORT || app.get("port"), function () {
-    console.log("Server is Running")
-})
+server.listen(app.get("port"), function () {
+    console.log(`App started on port ${app.get("port")}`);
+});
