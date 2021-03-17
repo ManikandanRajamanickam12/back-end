@@ -235,6 +235,20 @@ app.post('/joinRoom', auth, (req, res) => {
     })
 })
 
+// app.post('/directMessage', auth, (req, res) => {
+
+//     Message.find({
+//         $and: [
+//             { $or: [{ fromEmail: res.locals.user.email }, { fromEmail: req.body.receiver }] },
+//             { $or: [{ toEmail: res.locals.user.email }, { toEmail: req.body.receiver }] }
+//         ]
+//     }, (err, found) => {
+//         if (!err && found.length !== 0) {
+//             res.send(found)
+//         }
+//     })
+
+// })
 app.post('/directMessage', auth, (req, res) => {
 
     Message.find({
@@ -243,8 +257,12 @@ app.post('/directMessage', auth, (req, res) => {
             { $or: [{ toEmail: res.locals.user.email }, { toEmail: req.body.receiver }] }
         ]
     }, (err, found) => {
-        if (!err && found.length !== 0) {
-            res.send(found)
+        if (!err) {
+            if (found.length !== 0) {
+                res.send(found)
+            } else {
+                res.send("No Messages")
+            }
         }
     })
 
